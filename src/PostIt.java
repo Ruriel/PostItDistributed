@@ -26,33 +26,37 @@ import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.util.ArrayList;
 
-public class PostIt {
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+public class PostIt implements Runnable{
 
 	private JFrame frame;
-	private JPopupMenu menu = new JPopupMenu();
-	private Color amarelo = new Color(252, 250, 176);
-	private Color azul = new Color(197, 228, 246);
-	private Color verde = new Color(187, 239, 183);
-	private Color rosa = new Color(238, 184, 238);
-	private Color roxo = new Color(214, 208, 254);
-	private Color branco = new Color(254, 254, 254);
-	private JMenuItem blue = new JMenuItem("Azul");
-	private JMenuItem yellow = new JMenuItem("Amarelo");
-	private JMenuItem pink = new JMenuItem("Rosa");
-	private JMenuItem green = new JMenuItem("Verde");
-	private JMenuItem purple = new JMenuItem("Roxo");
-	private JMenuItem white = new JMenuItem("Branco");
-	private JMenuItem copy = new JMenuItem("Copiar");
-	private JMenuItem cut = new JMenuItem("Recortar");
-	private JMenuItem paste = new JMenuItem("Colar");
-	private JMenuItem delete = new JMenuItem("Excluir");
-	private JMenuItem select = new JMenuItem("Selecionar Tudo");
-	private Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+	private JPopupMenu menu;
+	private static final Color AMARELO = new Color(252, 250, 176);
+	private static final Color AZUL = new Color(197, 228, 246);
+	private static final Color VERDE = new Color(187, 239, 183);
+	private static final Color ROSA = new Color(238, 184, 238);
+	private static final Color ROXO = new Color(214, 208, 254);
+	private static final Color BRANCO = new Color(254, 254, 254);
+	private JMenuItem blue;
+	private JMenuItem yellow;
+	private JMenuItem pink;
+	private JMenuItem green;
+	private JMenuItem purple;
+	private JMenuItem white;
+	private JMenuItem copy;
+	private JMenuItem cut;
+	private JMenuItem paste;
+	private JMenuItem delete;
+	private JMenuItem select;
 	private JTextArea textArea;
+	private PopupListener popuplistener;
+	
 	/**
 	 * Launch the application.
 	 */
-	public static void main(String[] args) {
+	/*public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
@@ -63,17 +67,24 @@ public class PostIt {
 				}
 			}
 		});
-	}
+	}*/
 
-	/**
-	 * Create the application.
-	 */
-	public PostIt() {
-		initialize();
-	}
 
 	private void initializeSubmenu()
 	{
+		menu = new JPopupMenu();
+		blue = new JMenuItem("Azul");
+		yellow = new JMenuItem("Amarelo");
+		pink = new JMenuItem("Rosa");
+		green = new JMenuItem("Verde");
+		purple = new JMenuItem("Roxo");
+		white = new JMenuItem("Branco");
+		copy = new JMenuItem("Copiar");
+		cut = new JMenuItem("Recortar");
+		paste = new JMenuItem("Colar");
+		delete = new JMenuItem("Excluir");
+		select = new JMenuItem("Selecionar Tudo");
+		
 		menu.add(copy);
 		menu.add(paste);
 		menu.add(cut);
@@ -88,7 +99,7 @@ public class PostIt {
 		menu.add(purple);
 		menu.add(white);
 		
-		clipboard.addFlavorListener(new FlavorListener()
+		Toolkit.getDefaultToolkit().getSystemClipboard().addFlavorListener(new FlavorListener()
 		{
 
 			@Override
@@ -140,42 +151,42 @@ public class PostIt {
 		{
 			public void actionPerformed(ActionEvent evt)
 			{
-				textArea.setBackground(azul);
+				textArea.setBackground(AZUL);
 			}
 		});
 		pink.addActionListener(new ActionListener()
 		{
 			public void actionPerformed(ActionEvent evt)
 			{
-				textArea.setBackground(rosa);
+				textArea.setBackground(ROSA);
 			}
 		});
 		yellow.addActionListener(new ActionListener()
 		{
 			public void actionPerformed(ActionEvent evt)
 			{
-				textArea.setBackground(amarelo);
+				textArea.setBackground(AMARELO);
 			}
 		});
 		green.addActionListener(new ActionListener()
 		{
 			public void actionPerformed(ActionEvent evt)
 			{
-				textArea.setBackground(verde);
+				textArea.setBackground(VERDE);
 			}
 		});
 		purple.addActionListener(new ActionListener()
 		{
 			public void actionPerformed(ActionEvent evt)
 			{
-				textArea.setBackground(roxo);
+				textArea.setBackground(ROXO);
 			}
 		});
 		white.addActionListener(new ActionListener()
 		{
 			public void actionPerformed(ActionEvent evt)
 			{
-				textArea.setBackground(branco);
+				textArea.setBackground(BRANCO);
 			}
 		});
 		textArea.addCaretListener(new CaretListener()
@@ -207,24 +218,23 @@ public class PostIt {
 	/**
 	 * Initialize the contents of the frame.
 	 */
-	private void initialize() {
+	public PostIt() {
+		super();
 		frame = new JFrame();
 		frame.setBounds(10, 10, 320, 240);
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(new BorderLayout());
 		
 		textArea = new JTextArea();
 		JScrollPane scroll = new JScrollPane(textArea);
-		textArea.setBackground(amarelo);
+		textArea.setBackground(AMARELO);
 		textArea.setBounds(0, 0, 320, 240);
 		textArea.setFont(new Font("Times New Roman", Font.BOLD, 24));
 		frame.getContentPane().add(scroll);
-		PopupListener popuplistener = new PopupListener();
+		popuplistener = new PopupListener();
 		textArea.addMouseListener(popuplistener);
 		initializeSubmenu();
 	}
 		
-	
 	public class PopupListener extends MouseAdapter 
 	{
 	    public void mousePressed(MouseEvent e) 
@@ -245,4 +255,22 @@ public class PostIt {
 	        }
 	    }
 	}
+
+	@Override
+	public void run() {
+		frame.setVisible(true);
+		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		
+	}
+	
+	public JSONObject generateJson(String user)
+	{
+		JSONObject frameJSON = new JSONObject();
+		frameJSON.put("user", user);
+		frameJSON.put("bounds", frame.getBounds());
+		frameJSON.put("background", textArea.getBackground());
+		frameJSON.put("text", textArea.getText());
+		return frameJSON;
+	}
+
 }
