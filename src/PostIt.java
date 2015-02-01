@@ -1,6 +1,7 @@
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
 import java.awt.Font;
+import java.awt.Rectangle;
 import java.awt.Toolkit;
 
 import javax.swing.JFrame;
@@ -25,9 +26,12 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.bson.types.ObjectId;
+
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
 
 public class PostIt implements Runnable{
 
@@ -52,25 +56,52 @@ public class PostIt implements Runnable{
 	private JMenuItem select;
 	private JTextArea textArea;
 	private PopupListener popuplistener;
+	private ObjectId _id;
 	
-	/**
-	 * Launch the application.
-	 */
-	/*public static void main(String[] args) {
-		EventQueue.invokeLater(new Runnable() {
-			public void run() {
-				try {
-					PostIt window = new PostIt();
-					window.frame.setVisible(true);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		});
-	}*/
+	public PostIt(DBObject entry) {
+		frame = new JFrame();
+		textArea = new JTextArea();
+		JScrollPane scroll = new JScrollPane(textArea);
+		
+		frame.getContentPane().setLayout(new BorderLayout());
+		frame.getContentPane().add(scroll);
+		
+		popuplistener = new PopupListener();
+		textArea.addMouseListener(popuplistener);
+		initializeSubmenu();
+		if(entry != null)
+		{
+			BasicDBObject rectangle = (BasicDBObject) entry.get("rectangle");
+			int x = rectangle.getInt("x");
+			int y = rectangle.getInt("y");
+			int width = rectangle.getInt("width");
+			int height = rectangle.getInt("height");
+			frame.setBounds(new Rectangle(x, y, width, height));
+			textArea.setBackground(new Color((int) entry.get("background")));
+			textArea.setText(entry.get("text").toString());
+			_id = (ObjectId)(entry.get("_id"));
+		}
+		else
+		{
+			frame.setBounds(10, 10, 320, 240);
+			textArea.setBackground(AMARELO);
+		}
+		textArea.setBounds(frame.getBounds());
+		textArea.setFont(new Font("Times New Roman", Font.BOLD, 24));
+		
+	}
+	
+	public PostIt()
+	{
+		this(null);
+	}
+	
+	public ObjectId getId()
+	{
+		return _id;
+	}
 
-
-	private void initializeSubmenu()
+ 	private void initializeSubmenu()
 	{
 		menu = new JPopupMenu();
 		blue = new JMenuItem("Azul");
@@ -218,23 +249,32 @@ public class PostIt implements Runnable{
 	/**
 	 * Initialize the contents of the frame.
 	 */
-	public PostIt() {
-		super();
-		frame = new JFrame();
-		frame.setBounds(10, 10, 320, 240);
-		frame.getContentPane().setLayout(new BorderLayout());
-		
-		textArea = new JTextArea();
-		JScrollPane scroll = new JScrollPane(textArea);
-		textArea.setBackground(AMARELO);
-		textArea.setBounds(0, 0, 320, 240);
-		textArea.setFont(new Font("Times New Roman", Font.BOLD, 24));
-		frame.getContentPane().add(scroll);
-		popuplistener = new PopupListener();
-		textArea.addMouseListener(popuplistener);
-		initializeSubmenu();
+	
+ 	@Override
+	public void run() {
+		frame.setVisible(true);
+		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 	}
-		
+	
+	public BasicDBObject generateEntry(String user)
+	{
+		if(_id == null)
+			_id = new ObjectId();
+		BasicDBObject entry = new BasicDBObject("_id" , _id);
+		BasicDBObject rectangle = new BasicDBObject();
+		entry.append("user", user);
+		rectangle.append("x", frame.getX());
+		rectangle.append("y", frame.getY());
+		rectangle.append("width", frame.getWidth());
+		rectangle.append("height", frame.getHeight());
+		entry.append("rectangle", rectangle);
+		entry.append("background", textArea.getBackground().getRGB());
+		entry.append("text", textArea.getText());
+		entry.append("date", new Date().toString());
+		System.out.println(entry.toString());
+		return entry;
+	}
+
 	public class PopupListener extends MouseAdapter 
 	{
 	    public void mousePressed(MouseEvent e) 
@@ -256,21 +296,5 @@ public class PostIt implements Runnable{
 	    }
 	}
 
-	@Override
-	public void run() {
-		frame.setVisible(true);
-		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		
-	}
 	
-	public JSONObject generateJson(String user)
-	{
-		JSONObject frameJSON = new JSONObject();
-		frameJSON.put("user", user);
-		frameJSON.put("bounds", frame.getBounds());
-		frameJSON.put("background", textArea.getBackground());
-		frameJSON.put("text", textArea.getText());
-		return frameJSON;
-	}
-
 }
