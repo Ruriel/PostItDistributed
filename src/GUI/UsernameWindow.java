@@ -18,13 +18,15 @@ public class UsernameWindow
 {
 	JPanel panel = new JPanel();
 	JCheckBox checkAdm = null;
-	Object[] options = { "OK", "Cancel"};
 	String title;
 	JTextField userName = new JTextField(20);
 	JPasswordField password = new JPasswordField(20);
+	Object[] options;
+	
 	public UsernameWindow()
 	{
 		this("Login", "", "", null, null);
+		
 	}
 	public UsernameWindow(String titulo, boolean isAdm)
 	{
@@ -36,21 +38,26 @@ public class UsernameWindow
 		panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
 		userName.setText(login);
 		password.setText(senha);
-		if(isAdm != null || enableChkAdm != null)
-		{
-			checkAdm.setEnabled((boolean)enableChkAdm);
-			checkAdm.setSelected((boolean)isAdm);
-		}
+		
 		panel.add(new JLabel("Login"));
 		panel.add(userName);
 		panel.add(new JLabel("Password"));
 		panel.add(password);
 		title = titulo;
+			
 		if(isAdm != null && enableChkAdm != null)
 		{
 			checkAdm = new JCheckBox("Administrador");
+			checkAdm.setEnabled((boolean)enableChkAdm);
+			checkAdm.setSelected((boolean)isAdm);
+			options = new Object[3];
 			options[2] = checkAdm;
 		}
+		else
+			options = new Object[2];
+		options[0] = "OK";
+		options[1] = "Cancelar";
+		
 	}
 	
 	public int showWindow()

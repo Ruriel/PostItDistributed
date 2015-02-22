@@ -37,6 +37,7 @@ public class PostItGUI extends JFrame implements Runnable {
 	private int width = 0;
 	private int height = 0;
 	private DBObject usuario = null;
+	JLabel lblUsuario;
 	/**
 	 * Create the frame.
 	 */
@@ -74,7 +75,8 @@ public class PostItGUI extends JFrame implements Runnable {
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
 		contentPane.setLayout(new GridLayout(3, 2, 0, 0));
-
+		lblUsuario = new JLabel();
+		contentPane.add(lblUsuario);
 		notas = new ArrayList<PostIt>();
 		usuario = user;
 		JButton btnAtualizar = new JButton("Atualizar");
@@ -147,8 +149,8 @@ public class PostItGUI extends JFrame implements Runnable {
 				JButton btnLogout = new JButton("Logout");
 				btnLogout.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
-						reiniciar();
 						dispose();
+						reiniciar();
 					}
 				});
 				contentPane.add(btnLogout);
@@ -184,7 +186,15 @@ public class PostItGUI extends JFrame implements Runnable {
 			@Override
 			public void windowDeiconified(WindowEvent e) {}
 			@Override
-			public void windowActivated(WindowEvent e) {}
+			public void windowActivated(WindowEvent e) 
+			{
+				String username = "";
+				if((boolean)usuario.get("adm"))
+					username += "(adm) ";
+				username += (String) usuario.get("user");
+				lblUsuario.setText("Logado como: "+username);
+				System.out.println(username);
+			}
 			@Override
 			public void windowDeactivated(WindowEvent e){}
 		});
@@ -212,28 +222,28 @@ public class PostItGUI extends JFrame implements Runnable {
 			if(option == 0)
 			{
 				if(euw.getUsername().equals("") || euw.getPassword().equals(""))
-					JOptionPane.showMessageDialog(null, "N√£o pode haver campos em branco!", "Erro", 
+					JOptionPane.showMessageDialog(null, "N„o pode haver campos em branco!", "Erro", 
 							JOptionPane.ERROR_MESSAGE);
 				else
 				{
 					try {
 						usuario = pos.login(euw.getUsername(), euw.getPassword());
-					
 					}catch (RemoteException e1) {
 					// TODO Auto-generated catch block
 						e1.printStackTrace();
 					}
 					if(usuario == null)
 					{
-						JOptionPane.showMessageDialog(null, "Nome de usu√°rio ou senha incorretos!", "Erro", 
+						JOptionPane.showMessageDialog(null, "Nome de usu·rio ou senha incorretos!", "Erro", 
 								JOptionPane.ERROR_MESSAGE);
 					}
 					else
 					{
-						String welcome = (String) usuario.get("user");
-						welcome = (boolean) usuario.get("adm") == true ? "(adm) " + welcome : welcome; 
-						JLabel lblUsuario = new JLabel("Logado como: " + welcome);
-						contentPane.add(lblUsuario);
+						String username = "";
+						if((boolean)usuario.get("adm"))
+							username += "(adm) ";
+						username += (String) usuario.get("user");
+						lblUsuario.setText("Logado como: "+username);
 						setVisible(true);
 					}
 				}
@@ -244,6 +254,9 @@ public class PostItGUI extends JFrame implements Runnable {
 	}
 	@Override
 	public void run() {
-		reiniciar();
+		if(usuario == null)
+			reiniciar();
+		else
+			setVisible(true);
 	}
 }
