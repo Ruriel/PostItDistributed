@@ -1,4 +1,4 @@
-package GUI;
+package gui;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -7,7 +7,6 @@ import java.awt.Toolkit;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.JButton;
@@ -33,11 +32,12 @@ public class PostItGUI extends JFrame implements Runnable {
 	private JPanel contentPane;
 	private PostItInterface pos;
 	private ArrayList<PostIt> notas;
+	private String usuario;
+	private boolean isAdm;
 	Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 	private int width = 0;
 	private int height = 0;
-	private DBObject usuario = null;
-	JLabel lblUsuario;
+
 	/**
 	 * Create the frame.
 	 */
@@ -49,7 +49,7 @@ public class PostItGUI extends JFrame implements Runnable {
 				if(!nota.isVisible())
 					pos.deletarPostIt(nota.getId());
 				else
-					pos.salvarPostIt(nota.generateEntry((String)usuario.get("user")));
+					pos.salvarPostIt(nota.generateEntry(usuario));
 			} catch (RemoteException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
@@ -62,11 +62,33 @@ public class PostItGUI extends JFrame implements Runnable {
 			nota.fechar();
 	}
 	
-	public PostItGUI(PostItInterface pos)
+	public void atualizarNotas()
 	{
-		this(pos, null);
+		ArrayList<DBObject> list = null;
+		boolean isPresent;
+		try {
+			list = pos.buscarPostIt(usuario);
+		} catch (RemoteException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		for(PostIt minhaNota : notas)
+		{
+			isPresent = false;
+			for(DBObject obj : list)
+			{
+				if(minhaNota.getId().equals(obj.get("_id")))
+				{
+					minhaNota.atualizar(obj);
+					isPresent = true;
+				}
+			}
+			if(!isPresent)
+				minhaNota.fechar();
+		}
 	}
-	public PostItGUI(PostItInterface pos, DBObject user) {
+	
+	public PostItGUI(PostItInterface pos, String user, boolean adm) {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(0, 0, 450, 300);
 		setLocationRelativeTo(null);
@@ -75,36 +97,18 @@ public class PostItGUI extends JFrame implements Runnable {
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
 		contentPane.setLayout(new GridLayout(3, 2, 0, 0));
-		lblUsuario = new JLabel();
-		contentPane.add(lblUsuario);
+
 		notas = new ArrayList<PostIt>();
-		usuario = user;
+		this.usuario = user;
+		this.isAdm = adm;
+		JLabel lblUsuario = new JLabel("Logado como: " + user);
+		contentPane.add(lblUsuario);
+		
 		JButton btnAtualizar = new JButton("Atualizar");
 		btnAtualizar.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) 
 			{
-				ArrayList<DBObject> list = null;
-				boolean isPresent;
-				try {
-					list = pos.buscarPostIt((String)usuario.get("user"));
-				} catch (RemoteException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-				for(PostIt minhaNota : notas)
-				{
-					isPresent = false;
-					for(DBObject obj : list)
-					{
-						if(minhaNota.getId().equals(obj.get("_id")))
-						{
-							minhaNota.atualizar(obj);
-							isPresent = true;
-						}
-					}
-					if(!isPresent)
-						minhaNota.fechar();
-				}
+				atualizarNotas();
 			}
 		});
 		contentPane.add(btnAtualizar);
@@ -140,7 +144,7 @@ public class PostItGUI extends JFrame implements Runnable {
 		btnGerenciarUsuarios.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) 
 			{
-				UserManager u = new UserManager(usuario, pos);
+				UserManager u = new UserManager(usuario, pos, isAdm);
 				EventQueue.invokeLater(u);
 				dispose();
 			}
@@ -149,8 +153,10 @@ public class PostItGUI extends JFrame implements Runnable {
 				JButton btnLogout = new JButton("Logout");
 				btnLogout.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
+						
+						Login dialog = new Login(pos);
+						dialog.setVisible(true);
 						dispose();
-						reiniciar();
 					}
 				});
 				contentPane.add(btnLogout);
@@ -162,7 +168,7 @@ public class PostItGUI extends JFrame implements Runnable {
 			public void windowOpened(WindowEvent e) 
 			{
 				try {
-					ArrayList<DBObject> objects = pos.iniciarPostIts((String)usuario.get("user"));
+					ArrayList<DBObject> objects = pos.iniciarPostIts(usuario);
 					for (DBObject obj : objects) {
 						PostIt minhaNota = new PostIt(obj);
 						notas.add(minhaNota);
@@ -174,29 +180,44 @@ public class PostItGUI extends JFrame implements Runnable {
 				}
 				
 			}
+
 			@Override
-			public void windowClosing(WindowEvent e) {}
+			public void windowClosing(WindowEvent e) {
+				
+				
+			}
+
 			@Override
 			public void windowClosed(WindowEvent e) {
 				salvarNotas();
 				fecharNotas();
+				
 			}
+
 			@Override
-			public void windowIconified(WindowEvent e) {}
-			@Override
-			public void windowDeiconified(WindowEvent e) {}
-			@Override
-			public void windowActivated(WindowEvent e) 
-			{
-				String username = "";
-				if((boolean)usuario.get("adm"))
-					username += "(adm) ";
-				username += (String) usuario.get("user");
-				lblUsuario.setText("Logado como: "+username);
-				System.out.println(username);
+			public void windowIconified(WindowEvent e) {
+				// TODO Auto-generated method stub
+				
 			}
+
 			@Override
-			public void windowDeactivated(WindowEvent e){}
+			public void windowDeiconified(WindowEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void windowActivated(WindowEvent e) {
+				atualizarNotas();
+				
+			}
+
+			@Override
+			public void windowDeactivated(WindowEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+			
 		});
 	}
 
@@ -211,52 +232,10 @@ public class PostItGUI extends JFrame implements Runnable {
 		}
 		return null;
 	}
-	private void reiniciar()
-	{
-		UsernameWindow euw = new UsernameWindow();
-		int option = -2;
-		usuario = null;
-		while(usuario == null)
-		{
-			option = euw.showWindow();
-			if(option == 0)
-			{
-				if(euw.getUsername().equals("") || euw.getPassword().equals(""))
-					JOptionPane.showMessageDialog(null, "Não pode haver campos em branco!", "Erro", 
-							JOptionPane.ERROR_MESSAGE);
-				else
-				{
-					try {
-						usuario = pos.login(euw.getUsername(), euw.getPassword());
-					}catch (RemoteException e1) {
-					// TODO Auto-generated catch block
-						e1.printStackTrace();
-					}
-					if(usuario == null)
-					{
-						JOptionPane.showMessageDialog(null, "Nome de usuário ou senha incorretos!", "Erro", 
-								JOptionPane.ERROR_MESSAGE);
-					}
-					else
-					{
-						String username = "";
-						if((boolean)usuario.get("adm"))
-							username += "(adm) ";
-						username += (String) usuario.get("user");
-						lblUsuario.setText("Logado como: "+username);
-						setVisible(true);
-					}
-				}
-			}
-			else
-				System.exit(0);
-		}
-	}
+	
+	
 	@Override
 	public void run() {
-		if(usuario == null)
-			reiniciar();
-		else
-			setVisible(true);
+		setVisible(true);
 	}
 }

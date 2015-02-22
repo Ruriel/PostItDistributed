@@ -1,5 +1,8 @@
 package servidor;
 
+import gui.Login;
+import gui.PostIt;
+
 import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.Rectangle;
@@ -16,28 +19,29 @@ import javax.swing.JFrame;
 
 import org.bson.types.ObjectId;
 
-import GUI.PostIt;
-import GUI.PostItGUI;
-
 public class Main {
 
 	public static void main(String[] args) 
 	{
 		PostItInterface pos = null;
+		Registry reg = null;
 
 		do {
 			try
 
 			{
+				//reg = LocateRegistry.getRegistry(1900);
 				System.out.println("Iniciando...");
 				pos = (PostItInterface) Naming.lookup("rmi://localhost/PostItDistributed");
 			} catch (Exception e) {
-				System.out.println("Servidor n√£o registrado.");
+				System.out.println("Servidor n„o registrado. Iniciando novo registrador.");
 				EventQueue.invokeLater(new Registrador());
 				
 			}
 		} while (pos == null);
-		EventQueue.invokeLater(new PostItGUI(pos));
+		Login dialog = new Login(pos);
+		dialog.setVisible(true);
+
 	}
 
 }

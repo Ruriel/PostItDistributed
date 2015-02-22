@@ -1,4 +1,6 @@
 package servidor;
+import gui.PostIt;
+
 import java.awt.EventQueue;
 import java.net.UnknownHostException;
 import java.rmi.RemoteException;
@@ -6,8 +8,6 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 
 import org.bson.types.ObjectId;
-
-import GUI.PostIt;
 
 import com.mongodb.*;
 import com.mongodb.util.JSON;
@@ -41,13 +41,13 @@ public class Servidor extends UnicastRemoteObject implements PostItInterface{
 		BasicDBObject newUser = new BasicDBObject("user", login);
 		if(users.findOne(newUser) != null)
 		{
-			System.out.println("Usu√°rio "+login+" j√° existe! Use outro nome!");
+			System.out.println("Usu·rio "+login+" j· existe! Use outro nome!");
 			return false;
 		}
 		else
 		{
 			users.insert(newUser.append("password", senha).append("adm", adm));
-			System.out.println("Inserindo usu√°rio "+login+".");
+			System.out.println("Inserindo usu·rio "+login+".");
 			return true;
 		}
 	}
@@ -57,14 +57,12 @@ public class Servidor extends UnicastRemoteObject implements PostItInterface{
 	{
 		BasicDBObject query = new BasicDBObject("user", loginThen);
 		BasicDBObject obj = new BasicDBObject();
-		if(!loginNow.equals("") && !(loginNow == null))
-			obj.append("user", loginNow);
-		if(!senha.equals("") && !(senha == null))
-			obj.append("password", senha);
+		obj.append("user", loginNow);
+		obj.append("password", senha);
 		obj.append("adm", adm);
 		BasicDBObject update = new BasicDBObject("$set", obj);
 		users.update(query, update);
-		postits.update(query, new BasicDBObject("$set", new BasicDBObject("user", loginNow)));
+		postits.update(query, new BasicDBObject("$set", new BasicDBObject("user", loginNow)), false, true);
 		
 	}
 
@@ -121,7 +119,7 @@ public class Servidor extends UnicastRemoteObject implements PostItInterface{
 	}
 
 	@Override
-	public DBObject login(CharSequence login, CharSequence senha) 
+	public int login(CharSequence login, CharSequence senha) 
 	{
 		
 		DBObject user = users.findOne(new BasicDBObject("user", login));
@@ -130,10 +128,20 @@ public class Servidor extends UnicastRemoteObject implements PostItInterface{
 			if(senha.equals(user.get("password")))
 			{
 				System.out.println("Seja bem-vindo, "+login+".");
-				return user;
+				if((boolean)user.get("adm") == true)
+					return 0;
+				else
+					return 1;
+			}
+			else
+			{
+				System.out.println("Senha incorreta.");
+				return 2;
 			}
 		}
-		return null;
+		else
+			System.out.println("Usu·rio inexistente.");
+		return 3;
 	}
 
 	@Override
@@ -159,16 +167,9 @@ public class Servidor extends UnicastRemoteObject implements PostItInterface{
 	}
 
 	@Override
-	public boolean hasOnlyOneAdm() throws RemoteException 
+	public int buscarAdministradores() throws RemoteException 
 	{
-		DBCursor userCursor = users.find();
-		int admCount = 0;
-		for(DBObject user : userCursor)
-		{
-			if((boolean) user.get("adm") == true)
-				admCount++;
-		}
-		return admCount == 1;
+		return users.find(new BasicDBObject("adm", true)).length();
 	}
 
 	@Override
@@ -176,4 +177,10 @@ public class Servidor extends UnicastRemoteObject implements PostItInterface{
 		BasicDBObject user = new BasicDBObject("user", login);
 		return users.findOne(user);
 	}
+
+	/*@Override
+	public DBObject buscarPostIt(String id) throws RemoteException {
+		
+		return postits.findOne(new ObjectId(id));
+	}*/
 }

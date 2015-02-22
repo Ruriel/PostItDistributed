@@ -1,4 +1,4 @@
-package GUI;
+package gui;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -29,7 +29,6 @@ import com.jgoodies.forms.layout.FormLayout;
 import com.jgoodies.forms.layout.ColumnSpec;
 import com.jgoodies.forms.factories.FormFactory;
 import com.jgoodies.forms.layout.RowSpec;
-import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 
 import javax.swing.DefaultListModel;
@@ -59,10 +58,11 @@ public class UserManager extends JFrame implements Runnable {
 	 */
 	private static final long serialVersionUID = 2161940218558434953L;
 	private JPanel contentPane;
-	private DBObject usuario;
+	private String usuario;
 	private PostItInterface pos;
 	private ArrayList<DBObject> users;
 	private JList<String> list;
+	private boolean isAdm;
 
 	/**
 	 * Launch the application.
@@ -84,7 +84,6 @@ public class UserManager extends JFrame implements Runnable {
 		list.setModel(model);
 	}
 
-	
 	@Override
 	public void run() {
 		setVisible(true);
@@ -95,9 +94,10 @@ public class UserManager extends JFrame implements Runnable {
 	 * 
 	 * @throws RemoteException
 	 */
-	public UserManager(DBObject user, PostItInterface pos) {
+	public UserManager(String user, PostItInterface pos, boolean adm) {
 		this.usuario = user;
 		this.pos = pos;
+		isAdm = adm;
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		setBounds(100, 100, 450, 300);
 		setLocationRelativeTo(null);
@@ -115,7 +115,7 @@ public class UserManager extends JFrame implements Runnable {
 		btnAdicionar.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) 
 			{
-				UsernameWindow euw = new UsernameWindow("Adicionar Usu·rio", (boolean)usuario.get("adm"));
+				UsernameWindow euw = new UsernameWindow("Adicionar Usu√°rio", isAdm);
 				int option = -2;
 				boolean usuarioCriado = false;
 				while(!usuarioCriado && option != 1 && option != -1)
@@ -124,7 +124,7 @@ public class UserManager extends JFrame implements Runnable {
 					if(option == 0)
 					{
 						if(euw.getUsername().equals("") || euw.getPassword().equals(""))
-							JOptionPane.showMessageDialog(null, "N„o pode haver campos em branco!", "Erro", 
+							JOptionPane.showMessageDialog(null, "N√£o pode haver campos em branco!", "Erro", 
 									JOptionPane.ERROR_MESSAGE);
 						else
 						{
@@ -136,38 +136,37 @@ public class UserManager extends JFrame implements Runnable {
 								e1.printStackTrace();
 							}
 							if(usuarioCriado)
-								JOptionPane.showMessageDialog(null, "Usu·rio Criado com sucesso!", "Usu·rio criado", 
+								JOptionPane.showMessageDialog(null, "Usu√°rio Criado com sucesso!", "UsuÔøΩrio criado", 
 									JOptionPane.INFORMATION_MESSAGE);
 						
 							else
-								JOptionPane.showMessageDialog(null, "Usu·rio j· existente!", "Erro", 
+								JOptionPane.showMessageDialog(null, "Usu√°rio j√° existente!", "Erro", 
 									JOptionPane.ERROR_MESSAGE);
 						}
 					}
 				}
 			}
-		});
+			}
+		);
 
 		JButton btnExcluir = new JButton("Excluir");
 		btnExcluir.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				String[] options = { "Sim", "N„o" };
-				String selected = list.getSelectedValue().replace("(adm) ", "");
+				String[] options = { "Sim", "N√£o" };
+				String selected = list.getSelectedValue();
 				
 					int option = JOptionPane.showOptionDialog(null,
-						"Excluir usu·rio " + list.getSelectedValue() + "?",
-						"ConfirmaÁ„o", JOptionPane.DEFAULT_OPTION,
+						"Excluir usu√°rio " + list.getSelectedValue() + "?",
+						"Confirma√ß√£o", JOptionPane.DEFAULT_OPTION,
 						JOptionPane.WARNING_MESSAGE, null, options, options[1]);
 					if(option == 0)
 					{
-						
 						try {
 							pos.deletarUsuario(selected);
 						} catch (RemoteException e1) {
 							// TODO Auto-generated catch block
 							e1.printStackTrace();
 						}
-						
 					}
 			}
 		});
@@ -189,21 +188,20 @@ public class UserManager extends JFrame implements Runnable {
 			public void actionPerformed(ActionEvent e) {
 				DBObject editUser = null;
 				UsernameWindow euw = null;
-				String userName;
-				String password;
-				boolean isAdm;
+				String editUsername;
+				String editPassword;
+				boolean editAdm;
 				try {
 					editUser = pos.buscarUsuario(list.getSelectedValue().replace("(adm) ", ""));
 				} catch (RemoteException e2) {
 					// TODO Auto-generated catch block
 					e2.printStackTrace();
 				}
-				userName = (String)editUser.get("user");
-				password = (String)editUser.get("password");
-				isAdm = (boolean)editUser.get("adm");
+				editUsername = (String)editUser.get("user");
+				editPassword = (String)editUser.get("password");
+				editAdm = (boolean)editUser.get("adm");
 				try {
-					euw = new UsernameWindow("Editar Usu·rio", userName, 
-							password, isAdm, !pos.hasOnlyOneAdm() || !isAdm && (boolean)usuario.get("adm"));
+					euw = new UsernameWindow("Editar Usu√°rio", editUsername, editPassword, editAdm, pos.buscarAdministradores() > 1 || !editAdm && isAdm);
 				} catch (RemoteException e2) {
 					// TODO Auto-generated catch block
 					e2.printStackTrace();
@@ -216,34 +214,34 @@ public class UserManager extends JFrame implements Runnable {
 					{
 						if(euw.getPassword().equals("") || euw.getUsername().equals(""))
 						{
-							JOptionPane.showMessageDialog(null, "N„o pode haver campos em branco!", "Erro", JOptionPane.ERROR_MESSAGE);
-							euw.setAdm(isAdm);
-							euw.setPassword(password);
-							euw.setUsername(userName);
+							JOptionPane.showMessageDialog(null, "N√£o pode haver campos em branco!", "Erro", JOptionPane.ERROR_MESSAGE);
+							euw.setAdm(editAdm);
+							euw.setPassword(editPassword);
+							euw.setUsername(editUsername);
 							option = -2;
 						}
 						else
 						{
 							try {
-								pos.atualizarUsuario((String)editUser.get("user"), euw.getUsername(), euw.getPassword(), euw.isAdm());
-								if(userName.equals((String)usuario.get("user")))
+								pos.atualizarUsuario(list.getSelectedValue().replace("(adm) ",""), euw.getUsername(), 
+										euw.getPassword(), euw.isAdm());
+								if(user.equals(editUsername))
 								{
-									usuario.put("user", euw.getUsername());
-									usuario.put("password", euw.getPassword());
-									usuario.put("adm", euw.isAdm());
-								}
+									isAdm = euw.isAdm();
+									usuario = euw.getUsername();
 									
+								}
 							}catch (RemoteException e1) {
 								// TODO Auto-generated catch block
 								e1.printStackTrace();
 							}
-							JOptionPane.showMessageDialog(null, "Usu·rio atualizado com sucesso!", "Usu·rio criado", 
+							JOptionPane.showMessageDialog(null, "Usu√°rio atualizado com sucesso!", "Usu√°rio criado", 
 								JOptionPane.INFORMATION_MESSAGE);
 						}
 					}
 				}
 			}
-		});
+			});
 		GroupLayout gl_contentPane = new GroupLayout(contentPane);
 		gl_contentPane.setHorizontalGroup(
 			gl_contentPane.createParallelGroup(Alignment.LEADING)
@@ -289,28 +287,25 @@ public class UserManager extends JFrame implements Runnable {
 			public void valueChanged(ListSelectionEvent e)
 			{
 				if(list.getSelectedValue() == null)
+					list.setSelectedIndex(0);
+				if(adm)
 				{
-					btnExcluir.setEnabled(false);
-					btnEditar.setEnabled(false);
-				}
-				else
-				{
-					if((boolean)user.get("adm"))
+					if(list.getSelectedValue().endsWith(usuario))
 					{
-						btnEditar.setEnabled(true);
-						if(list.getSelectedValue().endsWith((String)usuario.get("user")))
-							btnExcluir.setEnabled(false);
-						else
-							btnExcluir.setEnabled(true);
+						btnExcluir.setEnabled(false);
 					}
 					else
 					{
-						btnExcluir.setEnabled(false);
-						if(list.getSelectedValue().equals((String)usuario.get("user")))
-							btnEditar.setEnabled(true);
-						else
-							btnEditar.setEnabled(false);
+						btnExcluir.setEnabled(true);
 					}
+				}
+				else
+				{
+					btnExcluir.setEnabled(false);
+					if(list.getSelectedValue().equals(usuario))
+						btnEditar.setEnabled(true);
+					else
+						btnEditar.setEnabled(false);
 				}
 			}
 		});
@@ -319,29 +314,43 @@ public class UserManager extends JFrame implements Runnable {
 			@Override
 			public void windowOpened(WindowEvent e) {
 				atualizar();
-				if(list.getSelectedValue() == null)
-				{
-					btnExcluir.setEnabled(false);
-					btnEditar.setEnabled(false);
-				}
+				list.setSelectedIndex(0);
+			}
+
+			@Override
+			public void windowClosing(WindowEvent e) {
+				// TODO Auto-generated method stub
+
 			}
 
 			@Override
 			public void windowClosed(WindowEvent e) {
-				EventQueue.invokeLater(new PostItGUI(pos, usuario));
+				EventQueue.invokeLater(new PostItGUI(pos, usuario, isAdm));
 			}
+
+			@Override
+			public void windowIconified(WindowEvent e) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void windowDeiconified(WindowEvent e) {
+				// TODO Auto-generated method stub
+
+			}
+
 			@Override
 			public void windowActivated(WindowEvent e) {
 				atualizar();
 			}
+
 			@Override
-			public void windowClosing(WindowEvent e) {}
-			@Override
-			public void windowIconified(WindowEvent e) {}
-			@Override
-			public void windowDeiconified(WindowEvent e) {}
-			@Override
-			public void windowDeactivated(WindowEvent e) {}
+			public void windowDeactivated(WindowEvent e) {
+				// TODO Auto-generated method stub
+
+			}
+
 		});
 	}
 }
