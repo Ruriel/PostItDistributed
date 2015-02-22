@@ -1,4 +1,6 @@
 package servidor;
+import gui.PostIt;
+
 import java.awt.EventQueue;
 import java.net.UnknownHostException;
 import java.rmi.RemoteException;
@@ -6,9 +8,6 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 
 import org.bson.types.ObjectId;
-
-import Interface.PostIt;
-import Interface.PostItInterface;
 
 import com.mongodb.*;
 import com.mongodb.util.JSON;
@@ -58,14 +57,12 @@ public class Servidor extends UnicastRemoteObject implements PostItInterface{
 	{
 		BasicDBObject query = new BasicDBObject("user", loginThen);
 		BasicDBObject obj = new BasicDBObject();
-		if(!loginNow.equals("") && !(loginNow == null))
-			obj.append("user", loginNow);
-		if(!senha.equals("") && !(senha == null))
-			obj.append("password", senha);
+		obj.append("user", loginNow);
+		obj.append("password", senha);
 		obj.append("adm", adm);
 		BasicDBObject update = new BasicDBObject("$set", obj);
 		users.update(query, update);
-		postits.update(query, new BasicDBObject("$set", new BasicDBObject("user", loginNow)));
+		postits.update(query, new BasicDBObject("$set", new BasicDBObject("user", loginNow)), false, true);
 		
 	}
 
@@ -174,4 +171,16 @@ public class Servidor extends UnicastRemoteObject implements PostItInterface{
 	{
 		return users.find(new BasicDBObject("adm", true)).length();
 	}
+
+	@Override
+	public DBObject buscarUsuario(CharSequence login) throws RemoteException {
+		BasicDBObject user = new BasicDBObject("user", login);
+		return users.findOne(user);
+	}
+
+	/*@Override
+	public DBObject buscarPostIt(String id) throws RemoteException {
+		
+		return postits.findOne(new ObjectId(id));
+	}*/
 }
