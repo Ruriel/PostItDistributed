@@ -7,8 +7,7 @@ import java.util.ArrayList;
 
 import org.bson.types.ObjectId;
 
-import Interface.PostIt;
-import Interface.PostItInterface;
+import GUI.PostIt;
 
 import com.mongodb.*;
 import com.mongodb.util.JSON;
@@ -42,13 +41,13 @@ public class Servidor extends UnicastRemoteObject implements PostItInterface{
 		BasicDBObject newUser = new BasicDBObject("user", login);
 		if(users.findOne(newUser) != null)
 		{
-			System.out.println("Usu·rio "+login+" j· existe! Use outro nome!");
+			System.out.println("Usu√°rio "+login+" j√° existe! Use outro nome!");
 			return false;
 		}
 		else
 		{
 			users.insert(newUser.append("password", senha).append("adm", adm));
-			System.out.println("Inserindo usu·rio "+login+".");
+			System.out.println("Inserindo usu√°rio "+login+".");
 			return true;
 		}
 	}
@@ -122,7 +121,7 @@ public class Servidor extends UnicastRemoteObject implements PostItInterface{
 	}
 
 	@Override
-	public int login(CharSequence login, CharSequence senha) 
+	public DBObject login(CharSequence login, CharSequence senha) 
 	{
 		
 		DBObject user = users.findOne(new BasicDBObject("user", login));
@@ -131,20 +130,10 @@ public class Servidor extends UnicastRemoteObject implements PostItInterface{
 			if(senha.equals(user.get("password")))
 			{
 				System.out.println("Seja bem-vindo, "+login+".");
-				if((boolean)user.get("adm") == true)
-					return 0;
-				else
-					return 1;
-			}
-			else
-			{
-				System.out.println("Senha incorreta.");
-				return 2;
+				return user;
 			}
 		}
-		else
-			System.out.println("Usu·rio inexistente.");
-		return 3;
+		return null;
 	}
 
 	@Override
@@ -170,8 +159,21 @@ public class Servidor extends UnicastRemoteObject implements PostItInterface{
 	}
 
 	@Override
-	public int buscarAdministradores() throws RemoteException 
+	public boolean hasOnlyOneAdm() throws RemoteException 
 	{
-		return users.find(new BasicDBObject("adm", true)).length();
+		DBCursor userCursor = users.find();
+		int admCount = 0;
+		for(DBObject user : userCursor)
+		{
+			if((boolean) user.get("adm") == true)
+				admCount++;
+		}
+		return admCount == 1;
+	}
+
+	@Override
+	public DBObject buscarUsuario(CharSequence login) throws RemoteException {
+		BasicDBObject user = new BasicDBObject("user", login);
+		return users.findOne(user);
 	}
 }
