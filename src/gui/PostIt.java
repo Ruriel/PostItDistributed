@@ -1,7 +1,5 @@
 package gui;
 import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
@@ -15,28 +13,24 @@ import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
 
 import java.awt.Color;
-import java.awt.ScrollPane;
-import java.awt.datatransfer.Clipboard;
-import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.FlavorEvent;
 import java.awt.datatransfer.FlavorListener;
-import java.awt.datatransfer.StringSelection;
-import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.WindowListener;
-import java.io.IOException;
-import java.rmi.server.RemoteObject;
-import java.util.ArrayList;
 import java.util.Date;
 
 import org.bson.types.ObjectId;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
-
+/**
+ * Classe responsável pela criação da janela da nota. A nota é um textarea onde é possível
+ * copiar, colar, recortar, selecionar tudo e mudar a cor de fundo.
+ * @author Ruriel
+ *
+ */
 public class PostIt implements Runnable{
 
 	private JFrame frame;
@@ -62,6 +56,11 @@ public class PostIt implements Runnable{
 	private PopupListener popuplistener;
 	private ObjectId _id;
 	
+	/**
+	 * Construtor onde gera-se a nota a partir de um objeto do banco. Caso o objeto seja nulo,
+	 * uma nota amarela de dimensões 320x240 e vazia será instanciada.
+	 * @param entry
+	 */
 	public PostIt(DBObject entry) {
 		super();
 		
@@ -94,10 +93,15 @@ public class PostIt implements Runnable{
 		
 	}
 	
-	public PostIt(int width, int height)
+	/**
+	 * Cria uma nota na posição especificada.
+	 * @param x Indica a posição horizontal da janela.
+	 * @param y Indica a posição vertical da janela.
+	 */
+	public PostIt(int x, int y)
 	{
 		this(null);
-		frame.setBounds(width, height, 320, 240);
+		frame.setBounds(x, y, 320, 240);
 	}
 	
 	public ObjectId getId()
@@ -105,6 +109,9 @@ public class PostIt implements Runnable{
 		return _id;
 	}
 
+	/**
+	 * Inicializa o submenu.
+	 */
  	private void initializeSubmenu()
 	{
 		menu = new JPopupMenu();
@@ -259,6 +266,13 @@ public class PostIt implements Runnable{
 		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 	}
 	
+ 	/**
+ 	 * Gera um objeto de banco a partir da configuração da janela e o nome do usuário.
+ 	 * A configuração consiste em posições horizontal e vertical, altura e largura, cor de fundo,
+ 	 * texto e data.
+ 	 * @param user Nome do usuário
+ 	 * @return Um objeto de banco contendo as informações da janela.
+ 	 */
 	public BasicDBObject generateEntry(CharSequence user)
 	{
 		if(_id == null)
@@ -277,6 +291,7 @@ public class PostIt implements Runnable{
 		System.out.println(entry.toString());
 		return entry;
 	}
+	
 	public void fechar()
 	{
 		frame.dispose();
@@ -287,6 +302,10 @@ public class PostIt implements Runnable{
 		return frame.isVisible();
 	}
 	
+	/**
+	 * Atualiza a nota de acordo com objeto.
+	 * @param entry Objeto que contém as mudanças a serem efetuadas.
+	 */
 	public void atualizar(DBObject entry)
 	{
 		BasicDBObject rectangle = (BasicDBObject) entry.get("rectangle");
@@ -300,6 +319,11 @@ public class PostIt implements Runnable{
 		_id = (ObjectId)(entry.get("_id"));
 	}
 	
+	/**
+	 * Listener para mostrar o submenu quando o botão direito for pressionado.
+	 * @author Ruriel
+	 *
+	 */
 	public class PopupListener extends MouseAdapter 
 	{
 	    public void mousePressed(MouseEvent e) 

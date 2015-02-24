@@ -1,12 +1,10 @@
 package gui;
 
 import java.awt.BorderLayout;
-import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
 
 import javax.swing.JButton;
-import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -15,18 +13,10 @@ import javax.swing.JTextField;
 import javax.swing.JLabel;
 import javax.swing.JPasswordField;
 
-import servidor.PostItInterface;
-import servidor.Registrador;
-
-import java.awt.GridLayout;
+import servidor.ServerInterface;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import java.net.MalformedURLException;
-import java.rmi.Naming;
-import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
 
 public class Login extends JFrame {
 
@@ -37,7 +27,6 @@ public class Login extends JFrame {
 	private final JPanel contentPanel = new JPanel();
 	private JTextField loginField;
 	private JPasswordField passwordField;
-	private PostItInterface pos;
 
 	/**
 	 * Launch the application.
@@ -50,7 +39,7 @@ public class Login extends JFrame {
 	/**
 	 * Create the dialog.
 	 */
-	public Login(PostItInterface pos) {
+	public Login(ServerInterface pos) {
 		setBounds(0, 0, 450, 139);
 		setLocationRelativeTo(null);
 		setResizable(false);
@@ -58,7 +47,6 @@ public class Login extends JFrame {
 		contentPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
 		getContentPane().add(contentPanel, BorderLayout.CENTER);
 		contentPanel.setLayout(null);
-		this.pos = pos;
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		{
 			JLabel lblLogin = new JLabel("Login");
@@ -123,6 +111,48 @@ public class Login extends JFrame {
 						}
 					}
 				});
+				
+				JButton btnRegistrar = new JButton("Registrar");
+				btnRegistrar.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent arg0) {
+						UsernameWindow euw = new UsernameWindow("Registrar novo usuário");
+						int option = -2;
+						boolean usuarioCriado = false;
+						while (!usuarioCriado && option != 1 && option != -1) {
+							option = euw.showWindow();
+							if (option == 0) {
+								if (euw.getUsername().equals("")
+										|| euw.getPassword().equals(""))
+									JOptionPane.showMessageDialog(null,
+											"Não pode haver campos em branco!", "Erro",
+											JOptionPane.ERROR_MESSAGE);
+								else {
+									try {
+										if(pos.contarAdministradores() < 1)
+											usuarioCriado = pos.criarUsuario(euw.getUsername(), euw.getPassword(), true);
+										else
+											usuarioCriado = pos.criarUsuario(euw.getUsername(), euw.getPassword(), false);
+									} catch (RemoteException e1) {
+										// TODO Auto-generated catch block
+										e1.printStackTrace();
+									}
+									if (usuarioCriado)
+										JOptionPane.showMessageDialog(null,
+												"Usuário Criado com sucesso!",
+												"Usuário criado",
+												JOptionPane.INFORMATION_MESSAGE);
+
+									else
+										JOptionPane.showMessageDialog(null,
+												"Usuário já existente!", "Erro",
+												JOptionPane.ERROR_MESSAGE);
+								}
+							}
+						}
+
+					}
+				});
+				buttonPane.add(btnRegistrar);
 				okButton.setActionCommand("Entrar");
 				buttonPane.add(okButton);
 				getRootPane().setDefaultButton(okButton);
@@ -139,5 +169,4 @@ public class Login extends JFrame {
 			}
 		}
 	}
-
 }

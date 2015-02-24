@@ -1,11 +1,13 @@
 package servidor;
 
 import java.rmi.*;
-import java.rmi.server.*;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
-import java.rmi.server.UnicastRemoteObject;
 
+/**
+ * Registrador que implementa uma Thread. Responsável por registrar localmente o Servidor.
+ * 
+ * @author Ruriel
+ *
+ */
 public class Registrador implements Runnable {
 
 @Override
@@ -13,16 +15,13 @@ public class Registrador implements Runnable {
 		try {
 
 			Servidor obj = new Servidor();
-			//UnicastRemoteObject.unexportObject(obj, true);
-			//PostItInterface stub = (PostItInterface) UnicastRemoteObject.exportObject(obj, 0);
-			//Registry reg = LocateRegistry.createRegistry(1900);
 			Naming.rebind("rmi://localhost/PostItDistributed", obj);
-
-			System.out.println("Servidor Registrado!");
 
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		System.out.println("Servidor registrado!");
+		
 	}
 
 }
